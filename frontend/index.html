@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">My Interactive Dashboard</h1>
+        <div class="row">
+            <!-- Control Panel Card -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Controls</h5>
+                        <div id="checkbox-container"></div>
+                        <div class="mt-3">
+                            <label for="startDate">Start Date:</label>
+                            <select id="startDate" name="startDate"></select>
+                        </div>
+                        <div class="mt-3">
+                            <label for="endDate">End Date:</label>
+                            <select id="endDate" name="endDate"></select>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" id="submitBtn" class="btn btn-primary">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Chart and Stats Card -->
+            <div class="col-md-8">
+                <!-- Chart Card -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <canvas id="myChart"></canvas>
+                    </div>
+                </div>
+                <!-- Stats Card -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Descriptive Statistics</h5>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Metric</th>
+                                    <th scope="col">Dataset 1</th>
+                                    <th scope="col">Dataset 2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Statistics rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Script -->
+    <script src="js/script.js"></script>
+</body>
+</html>
