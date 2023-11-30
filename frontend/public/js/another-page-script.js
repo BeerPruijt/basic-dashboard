@@ -48,18 +48,39 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
-
 function getForecastDatasets(monthIndex) {
+    console.log(originalForecastData);
+
+    // Convert object keys (dates) to an array and sort them if necessary
+    let dateKeys = Object.keys(originalForecastData[0].data).sort();
+
+    // Ensure monthIndex is within the bounds of dateKeys
+    if (monthIndex < 0 || monthIndex >= dateKeys.length) {
+        console.error('Invalid monthIndex:', monthIndex);
+        return [];
+    }
+
+    // Get the selected date key based on monthIndex
+    let selectedDateKey = dateKeys[monthIndex+6];
+
     return originalForecastData.map(model => {
+        let yourCustomLabels = originalLabels.slice(monthIndex+6, monthIndex + 18);
+
+        let dataForSelectedMonth = model.data[selectedDateKey].map((value, index) => {
+            return { x: yourCustomLabels[index], y: value };
+        });
+
         return {
             label: model.label,
-            data: model.data[monthIndex],
-            borderColor: model.borderColor, // Define these in your original dataset
-            backgroundColor: model.backgroundColor, // Define these in your original dataset
+            data: dataForSelectedMonth,
+            borderColor: model.borderColor,
+            backgroundColor: model.backgroundColor,
             // ... other properties as needed
         };
     });
 }
+
+
 
 function updateChart() {
     // Update the labels for the chart
