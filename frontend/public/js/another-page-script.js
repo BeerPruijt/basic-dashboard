@@ -72,7 +72,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function getForecastDatasets(monthIndex) {
-    console.log(originalForecastData);
 
     // Convert object keys (dates) to an array and sort them if necessary
     let dateKeys = Object.keys(originalForecastData[0].data).sort();
@@ -87,12 +86,15 @@ function getForecastDatasets(monthIndex) {
     let selectedDateKey = dateKeys[monthIndex+6];
 
     return originalForecastData.map(model => {
+        // We plot 6 months before the forecasts and assume the length of the forecasts is 12 months for now
         let yourCustomLabels = originalLabels.slice(monthIndex+6, monthIndex + 18);
 
+        // The forecasts are taken from the originalForecastData.data[dateKeys[monthIndex+6]] and paired with the custom labels as defined above
         let dataForSelectedMonth = model.data[selectedDateKey].map((value, index) => {
             return { x: yourCustomLabels[index], y: value };
         });
 
+        // The formatted dataset is returned as a JSON that is accepted by Chart.js
         return {
             label: model.label,
             data: dataForSelectedMonth,
@@ -105,16 +107,15 @@ function getForecastDatasets(monthIndex) {
 
 
 function updateChart() {
+
     // Update the labels for the chart
     myChart.data.labels = originalLabels.slice(currentMonthIndex, currentMonthIndex + windowSize);
 
-    // Update the true line dataset
+    // Update the true line dataset (inplace)
     const newTrueLineData = originalTruelineData.slice(currentMonthIndex, currentMonthIndex + windowSize);
-    console.log('line')
-    console.log(originalTruelineData);
     updateDatasetInPlace(myChart.data.datasets[0].data, newTrueLineData);
 
-    // Update forecast datasets
+    // Update forecast datasets (inplace)
     const newForecastDatasets = getForecastDatasets(currentMonthIndex);
     updateForecastDatasetsInPlace(myChart.data.datasets, newForecastDatasets);
 
