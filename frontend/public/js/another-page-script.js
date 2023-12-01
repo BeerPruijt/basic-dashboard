@@ -5,12 +5,25 @@ let data
 
 async function fetchDataAndCreateChart() {
     try {
+        // Fetch the data from the API and convert it to a JSON
+        // The structure is as follows: 
+        // data
+        // - labels
+        // - datasets (in principle 3 values in this array)
+        //   - label 
+        //   - data
+
         const response = await fetch('http://localhost:5000/get-data-forecasts');
         data = await response.json();
-        console.log(data);
-        originalLabels = data.labels;
-        originalForecastData = data.datasets.slice(1); // Assuming datasets[1] and datasets[2] are forecasts
 
+        // Derive the true data from the dataset and make a deep copy such that we can update the shown data with slices without altering it
+        originalLabels = JSON.parse(JSON.stringify(data.labels));
+        originalTruelineData = JSON.parse(JSON.stringify(data.datasets[0].data)); // Create a deep copy
+
+        // If datasets is [dataset0, dataset1, dataset2, ...], then datasets.slice(1) would result in a copy of [dataset1, dataset2, ...].
+        originalForecastData = JSON.parse(JSON.stringify(data.datasets.slice(1))); 
+
+        // Initiate the chart (still not completely clear to me what happens here but not the most important for now)
         const ctx = document.getElementById('myChart').getContext('2d');
         myChart = new Chart(ctx, {
             type: 'line',
@@ -22,7 +35,16 @@ async function fetchDataAndCreateChart() {
                 ]
             },
             options: {
-                // ... options ...
+                animation: {
+                    duration: 500, // Duration in milliseconds (1000 ms = 1 second)
+                    easing: 'linear', // Easing function to use
+                    onProgress: function(animation) {
+                        // Optional: function called on each step of the animation
+                    },
+                    onComplete: function(animation) {
+                        // Optional: function called when the animation is complete
+                    }
+                }
             }
         });
 
@@ -48,6 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
 function getForecastDatasets(monthIndex) {
     console.log(originalForecastData);
 
@@ -81,23 +104,58 @@ function getForecastDatasets(monthIndex) {
 }
 
 
-
 function updateChart() {
     // Update the labels for the chart
     myChart.data.labels = originalLabels.slice(currentMonthIndex, currentMonthIndex + windowSize);
 
     // Update the true line dataset
-    const trueLineData = data.datasets[0].data.slice(currentMonthIndex, currentMonthIndex + windowSize);
+    const newTrueLineData = originalTruelineData.slice(currentMonthIndex, currentMonthIndex + windowSize);
+    console.log('line')
+    console.log(originalTruelineData);
+    updateDatasetInPlace(myChart.data.datasets[0].data, newTrueLineData);
 
-    // Update the datasets for the chart
-    myChart.data.datasets = [
-        {
-            ...myChart.data.datasets[0], // Keep the properties of the True Line dataset
-            data: trueLineData // Update the data for the True Line
-        },
-        ...getForecastDatasets(currentMonthIndex) // Update forecast datasets
-    ];
+    // Update forecast datasets
+    const newForecastDatasets = getForecastDatasets(currentMonthIndex);
+    updateForecastDatasetsInPlace(myChart.data.datasets, newForecastDatasets);
+
+    // Update y-axis options
+    myChart.options.scales.y = {
+        min: 0,
+        max: 100,
+        ticks: {
+            stepSize: 20
+        }
+        // ... other y-axis options ...
+    };
 
     // Update the chart
     myChart.update();
 }
+
+function updateDatasetInPlace(oldData, newData) {
+    // Update each point in the existing dataset
+    oldData.length = newData.length; // Ensure oldData has the same length as newData
+    for (let i = 0; i < newData.length; i++) {
+        oldData[i] = newData[i];
+    }
+}
+
+function updateForecastDatasetsInPlace(oldDatasets, newForecastDatasets) {
+    // Start updating from index 1, as index 0 is the true line dataset
+    for (let i = 1; i < oldDatasets.length; i++) {
+        if (i < newForecastDatasets.length + 1) {
+            updateDatasetInPlace(oldDatasets[i].data, newForecastDatasets[i - 1].data);
+        }
+    }
+
+    // Add any additional new forecast datasets
+    for (let i = oldDatasets.length; i < newForecastDatasets.length + 1; i++) {
+        oldDatasets.push(newForecastDatasets[i - 1]);
+    }
+
+    // Remove excess datasets
+    if (newForecastDatasets.length + 1 < oldDatasets.length) {
+        oldDatasets.length = newForecastDatasets.length + 1;
+    }
+}
+
