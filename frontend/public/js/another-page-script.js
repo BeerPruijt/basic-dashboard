@@ -1,7 +1,31 @@
-let myChart;
+let myChart, datesFromDatasets;
 let currentMonthIndex = 0; // Index for the current month
 const windowSize = 24; // Two-year window size in months
 let data 
+
+// Assuming originalForecastData is an array of objects, 
+// and each object has a 'data' property that is an object with date keys
+
+function extractDatesFromDatasets(forecastData) {
+    const allDates = forecastData.reduce((acc, dataset) => {
+        // Get the dates from the current dataset
+        const dates = Object.keys(dataset.data);
+
+        // Add these dates to the accumulator, avoiding duplicates
+        dates.forEach(date => {
+            if (!acc.includes(date)) {
+                acc.push(date);
+            }
+        });
+
+        return acc;
+    }, []);
+
+    // Sort dates if necessary
+    allDates.sort();
+
+    return allDates;
+}
 
 async function fetchDataAndCreateChart() {
     try {
@@ -22,6 +46,7 @@ async function fetchDataAndCreateChart() {
 
         // If datasets is [dataset0, dataset1, dataset2, ...], then datasets.slice(1) would result in a copy of [dataset1, dataset2, ...].
         originalForecastData = JSON.parse(JSON.stringify(data.datasets.slice(1))); 
+        datesFromDatasets = extractDatesFromDatasets(originalForecastData);
 
         // Initiate the chart (still not completely clear to me what happens here but not the most important for now)
         const ctx = document.getElementById('myChart').getContext('2d');
@@ -73,24 +98,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function getForecastDatasets(monthIndex) {
 
-    // Convert object keys (dates) to an array and sort them if necessary
-    let dateKeys = Object.keys(originalForecastData[0].data).sort();
+    // Get the selected date based on monthIndex
+    let selectedDate = datesFromDatasets[monthIndex];
 
-    // Ensure monthIndex is within the bounds of dateKeys
-    if (monthIndex < 0 || monthIndex >= dateKeys.length) {
-        console.error('Invalid monthIndex:', monthIndex);
-        return [];
-    }
-
-    // Get the selected date key based on monthIndex
-    let selectedDateKey = dateKeys[monthIndex+6];
+    // Derive the index of the selected date in the oiriginalLabels array
+    let indexOfSelectedDate = originalLabels.indexOf(getFormattedDate(selectedDate));
 
     return originalForecastData.map(model => {
-        // We plot 6 months before the forecasts and assume the length of the forecasts is 12 months for now
-        let yourCustomLabels = originalLabels.slice(monthIndex+6, monthIndex + 18);
 
-        // The forecasts are taken from the originalForecastData.data[dateKeys[monthIndex+6]] and paired with the custom labels as defined above
-        let dataForSelectedMonth = model.data[selectedDateKey].map((value, index) => {
+        // Derive the labels of the months corresponding to the forecasts
+        let yourCustomLabels = originalLabels.slice(indexOfSelectedDate, indexOfSelectedDate + 12);
+
+        // The forecasts are taken from the data based on the selectedDate and mapped to the labels, forecasts are stored in dict-like structure 'YYYY-MM-DD': [forecast1, forecast2, ...]
+        let dataForSelectedMonth = model.data[selectedDate].map((value, index) => {
             return { x: yourCustomLabels[index], y: value };
         });
 
@@ -105,14 +125,26 @@ function getForecastDatasets(monthIndex) {
     });
 }
 
+// A function to format the date as YYYY-MM for the plot, raises error when the original format is not YYYY-MM-DD
+function getFormattedDate(date) {
+    let dateParts = date.split('-');
+    if (dateParts.length !== 3) {
+        console.error('Unexpected date format:', date);
+    }
+    console.log(dateParts[0] + '-' + dateParts[1])
+    return dateParts[0] + '-' + dateParts[1];
+}
 
 function updateChart() {
 
+    // define the start of the window as max(currentMonthIndex-6, 0) 
+    startOfWindow = Math.max(currentMonthIndex - 6, 0);    
+
     // Update the labels for the chart
-    myChart.data.labels = originalLabels.slice(currentMonthIndex, currentMonthIndex + windowSize);
+    myChart.data.labels = originalLabels.slice(startOfWindow, startOfWindow + windowSize);
 
     // Update the true line dataset (inplace)
-    const newTrueLineData = originalTruelineData.slice(currentMonthIndex, currentMonthIndex + windowSize);
+    const newTrueLineData = originalTruelineData.slice(startOfWindow, startOfWindow + windowSize);
     updateDatasetInPlace(myChart.data.datasets[0].data, newTrueLineData);
 
     // Update forecast datasets (inplace)
