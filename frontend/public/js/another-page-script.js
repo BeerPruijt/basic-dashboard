@@ -1,4 +1,4 @@
-let myChart, datesFromDatasets;
+let myChart, datesFromDatasets, minScale, maxScale;
 let currentMonthIndex = 0; // Index for the current month
 const windowSize = 24; // Two-year window size in months
 let data 
@@ -42,10 +42,14 @@ async function fetchDataAndCreateChart() {
 
         // Derive the true data from the dataset and make a deep copy such that we can update the shown data with slices without altering it
         originalLabels = JSON.parse(JSON.stringify(data.labels));
-        originalTruelineData = JSON.parse(JSON.stringify(data.datasets[0].data)); // Create a deep copy
+        originalTruelineData = JSON.parse(JSON.stringify(data.true_line.data)); // Create a deep copy
+
+        // Define min and max y values as the maximum and minimum of the true line and forecast datasets
+        minScale = Math.min(...originalTruelineData);
+        maxScale = Math.max(...originalTruelineData);
 
         // If datasets is [dataset0, dataset1, dataset2, ...], then datasets.slice(1) would result in a copy of [dataset1, dataset2, ...].
-        originalForecastData = JSON.parse(JSON.stringify(data.datasets.slice(1))); 
+        originalForecastData = JSON.parse(JSON.stringify(data.datasets)); 
         datesFromDatasets = extractDatesFromDatasets(originalForecastData);
 
         // Initiate the chart (still not completely clear to me what happens here but not the most important for now)
@@ -55,11 +59,17 @@ async function fetchDataAndCreateChart() {
             data: {
                 labels: originalLabels.slice(currentMonthIndex, currentMonthIndex + windowSize),
                 datasets: [
-                    data.datasets[0], // True Line
+                    data.true_line, // True Line
                     ...getForecastDatasets(currentMonthIndex) // Forecast datasets
                 ]
             },
             options: {
+                scales: {
+                    y: {
+                        min: minScale,
+                        max: maxScale
+                    }
+                },
                 animation: {
                     duration: 500, // Duration in milliseconds (1000 ms = 1 second)
                     easing: 'linear', // Easing function to use
@@ -136,9 +146,8 @@ function getFormattedDate(date) {
 }
 
 function updateChart() {
-
-    // define the start of the window as max(currentMonthIndex-6, 0) 
-    startOfWindow = Math.max(currentMonthIndex - 6, 0);    
+    // Define the start of the window as max(currentMonthIndex-6, 0) 
+    const startOfWindow = Math.max(currentMonthIndex - 6, 0);    
 
     // Update the labels for the chart
     myChart.data.labels = originalLabels.slice(startOfWindow, startOfWindow + windowSize);
@@ -150,16 +159,6 @@ function updateChart() {
     // Update forecast datasets (inplace)
     const newForecastDatasets = getForecastDatasets(currentMonthIndex);
     updateForecastDatasetsInPlace(myChart.data.datasets, newForecastDatasets);
-
-    // Update y-axis options
-    myChart.options.scales.y = {
-        min: 0,
-        max: 100,
-        ticks: {
-            stepSize: 20
-        }
-        // ... other y-axis options ...
-    };
 
     // Update the chart
     myChart.update();

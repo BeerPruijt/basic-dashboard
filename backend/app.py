@@ -56,11 +56,8 @@ def get_data_forecasts():
     # Prepare data for JSON response
     data = {
         "labels": [date.strftime("%Y-%m") for date in date_range],
+        "true_line": {"data": true_line, "label": "True Line"},
         "datasets": [
-            {
-                "label": "True Line",
-                "data": true_line
-            },
             {
                 "label": "Model1",
                 "data": model1_forecasts
