@@ -88,6 +88,28 @@ async function fetchDataAndCreateChart() {
     }
 }
 
+document.getElementById('prevBtn').addEventListener('click', function () {
+    if (currentMonthIndex > 0) {
+        currentMonthIndex--;
+        updateChart();
+    }
+    // Disable the button if currentMonthIndex is 0
+    if (currentMonthIndex == 0) {
+        document.getElementById('prevBtn').disabled = true;
+    }
+});
+
+document.getElementById('nextBtn').addEventListener('click', function () {
+    if (currentMonthIndex < originalLabels.length - windowSize) {
+        currentMonthIndex++;
+        updateChart();
+    }
+    // Enable the button if currentMonthIndex is greater than 0
+    if (currentMonthIndex > 0) {
+        document.getElementById('prevBtn').disabled = false;
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     fetchDataAndCreateChart();
 
